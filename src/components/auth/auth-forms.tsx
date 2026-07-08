@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
@@ -41,6 +42,36 @@ export function AuthForms({ mode }: { mode: AuthFormMode }) {
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    let active = true;
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && active) {
+          toast({
+            title: 'Signed In',
+            description: 'Successfully logged in with Google.',
+          });
+          router.push('/dashboard');
+        }
+      } catch (error: any) {
+        console.error('Error handling redirect sign-in:', error);
+        if (active) {
+          toast({
+            variant: 'destructive',
+            title: 'Google Sign-In Error',
+            description: error.message || 'Failed to authenticate with Google.',
+          });
+        }
+      }
+    };
+
+    checkRedirectResult();
+    return () => {
+      active = false;
+    };
+  }, [auth, router, toast]);
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -153,6 +184,9 @@ export function AuthForms({ mode }: { mode: AuthFormMode }) {
           Google
         </Button>
       </motion.div>
+      <p className="text-center text-xs text-muted-foreground/80 mt-1">
+        Tip: If Google Sign-In is blocked or fails inside the preview pane, click the <strong>Open in New Tab</strong> button in the top-right corner.
+      </p>
     </motion.div>
   );
 }
